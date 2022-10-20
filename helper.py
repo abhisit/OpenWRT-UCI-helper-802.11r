@@ -2,7 +2,18 @@
 
 import argparse
 import os, binascii
+import secrets
+import string
 import textwrap
+
+def random_passphrase(length):
+    return  ''.join(
+                    secrets.choice(
+                        string.ascii_uppercase +
+                        string.digits +
+                        string.capwords("!#$%&()*<>=?@^\\{\\}")
+                    ) for i in range(length) # 16 ASCIIs = 128-bit hex format
+                )
 
 def random_hex(length):
     return binascii.b2a_hex(os.urandom(length))
@@ -33,7 +44,8 @@ def parse_arguments():
 
 if __name__ == '__main__':
     ARGS = parse_arguments()
-    password = random_hex(16).decode()
+    passphrase = random_passphrase(16)
+    password = binascii.b2a_hex(passphrase.encode("utf8")).decode("utf8")
     mobility_domain = random_hex(2).decode()
     if 'uci' in ARGS.format:
         output_prefix = 'uci set wireless.@wifi-iface[{}].'.format(ARGS.iface)
@@ -47,6 +59,8 @@ if __name__ == '__main__':
         nasid = bssid.replace(':', '')
         r0kh.append('{},{},{}'.format(bssid, nasid, password))
         r1kh.append('{},{},{}'.format(bssid, bssid, password))
+
+    print('\npassphrase \'{}\'\n'.format(passphrase))
 
     for bssid in ARGS.ap:
         nasid = bssid.replace(':', '')
